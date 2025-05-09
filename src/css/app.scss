@@ -200,6 +200,15 @@ h3 {
   height: 100%;
 }
 
+.overlay-panel-text.inactive {
+  pointer-events: none;
+}
+
+.overlay.white-background {
+  background-color: #ffffff;
+  color: #000033;
+}
+
 .input-box {
   position: absolute;
   width: 95%;

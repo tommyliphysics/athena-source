@@ -79,15 +79,20 @@
             evaluation in full.
           </p>
           <p>
-            The model is fully open source, with the training and testing data as well as the full
-            code to create the model available on the <a href="https://github.org">GitHub</a>. More
-            details about the process of creating the model can be found in my Medium article.
+            The model is fully open source, with the train and test data as well as the full code to
+            create the model available on the
+            <a href="https://github.com/tommyliphysics/athena-source">GitHub</a>. If you'd like to
+            take a deep dive into the process of creating an AI detector, check out this
+            <a
+              href="https://medium.com/@tomrodolfolee/building-an-ai-detector-from-scratch-part-i-db72bc2bdadb"
+              >series of articles on medium.com</a
+            >.
           </p>
         </div>
       </div>
 
       <div ref="testResultsOverlayPanel" class="overlay">
-        <div class="overlay-panel-text">
+        <div class="overlay-panel-text" ref="testResultsOverlayText">
           <div
             style="
               display: flex;
@@ -131,10 +136,10 @@
                 v-for="(model, index) in testSets[currentTestSetIdx].index.slice(1)"
                 :key="index"
               >
-                <td @click="showTestSample(index, -1)"></td>
-                <td @click="showTestSample(index, -1)"></td>
-                <td @click="showTestSample(index, 1)"></td>
-                <td @click="showTestSample(index, 0)"></td>
+                <td @click="showTestSample(index + 1, -1)"></td>
+                <td @click="showTestSample(index + 1, -1)"></td>
+                <td @click="showTestSample(index + 1, 1)"></td>
+                <td @click="showTestSample(index + 1, 0)"></td>
               </tr>
             </table>
           </div>
@@ -156,7 +161,11 @@
           "
           class="scroll"
         >
-          <div ref="explainTestSample" id="explainTestSample"></div>
+          <div
+            ref="explainTestSample"
+            id="explainTestSample"
+            @click="hideTestSampleOverlay()"
+          ></div>
           <div>
             <p v-for="(para, index) in testSampleTextParas" :key="index">
               {{ para }}
@@ -165,7 +174,7 @@
         </div>
       </div>
 
-      <div ref="courseOverlayPanel" class="overlay scroll">
+      <div ref="courseOverlayPanel" class="overlay scroll white-background">
         <div class="overlay-panel-text">
           <div
             style="
@@ -226,7 +235,7 @@
               </div>
               <div class="course-text-2-animation">
                 <img
-                  src="src/assets/nn_animation.gif"
+                  src="images/nn_animation.gif"
                   alt="image of a basic neural network"
                   style="width: 100%; bottom: 0%"
                 />
@@ -252,10 +261,7 @@
               position.
             </p>
             <center>
-              <img
-                src="src/assets/tokens_animation.gif"
-                style="width: 90%; bottom: 0%; margin-top: 5%"
-              />
+              <img src="images/tokens_animation.gif" id="tokenAnimationGif" />
             </center>
           </div>
           <div style="display: none; flex-direction: column" ref="courseText4">
@@ -283,10 +289,7 @@
               according to its probability (highly probable in blue, less probable in red).
             </p>
             <center>
-              <img
-                src="src/assets/output_tokens_animation.gif"
-                style="width: 90%; bottom: 0%; margin-top: 5%"
-              />
+              <img src="images/output_tokens_animation.gif" id="outputTokensAnimationGif" />
             </center>
           </div>
           <div style="display: none; flex-direction: column" ref="courseText5">
@@ -327,8 +330,14 @@
             </p>
             <p>
               To learn more about how <b>Athena</b> was designed and tested,
-              <a href="#" @click="showAbout()">click here</a>, or
-              <a href="https://medium.com">read the Medium article</a>.
+              <a href="#" @click="showAbout()" style="color: #001155"
+                >click here to explore that in the app</a
+              >, or
+              <a
+                href="https://medium.com/@tomrodolfolee/building-an-ai-detector-from-scratch-part-i-db72bc2bdadb"
+                style="color: #001155"
+                >check out my articles on medium.com</a
+              >.
             </p>
           </div>
         </div>
@@ -379,12 +388,13 @@ export default {
       this.$refs.bottomPanel.classList.add('loaded')
 
       let hash = window.location.hash.split('#')
-      if (hash[hash.length - 1] == 'About') {
-        this.toggleAboutOverlayButtonClick()
+      console.log('Hash is: ', hash)
+      if (hash[hash.length - 1] == '/About') {
+        this.showAbout()
       } else {
         this.showPanel(1)
       }
-    }, 2000)
+    }, 1000)
     this.panels = [
       this.$refs.titlePanel,
       this.$refs.predictPanel,
@@ -416,8 +426,8 @@ export default {
 
     checkStatus() {
       var xhr = new XMLHttpRequest()
-      //      xhr.open('POST', 'https://yg8q32yhcc.execute-api.us-east-1.amazonaws.com/athena', true)
-      xhr.open('POST', 'http://127.0.0.1:5000/athena', true)
+      xhr.open('POST', 'https://yg8q32yhcc.execute-api.us-east-1.amazonaws.com/athena', true)
+      //xhr.open('POST', 'http://127.0.0.1:5000/athena', true)
       xhr.setRequestHeader('Content-Type', 'application/json')
       xhr.onreadystatechange = function () {
         if (xhr.readyState === XMLHttpRequest.DONE) {
@@ -441,8 +451,12 @@ export default {
     predict() {
       var xhr = new XMLHttpRequest()
       this.$refs.predictButton.classList.add('loading')
-      xhr.open('POST', 'http://127.0.0.1:5000/athena/predict', true)
-      //xhr.open('POST', 'https://yg8q32yhcc.execute-api.us-east-1.amazonaws.com/athena/predict', true);
+      //xhr.open('POST', 'http://127.0.0.1:5000/athena/predict', true)
+      xhr.open(
+        'POST',
+        'https://yg8q32yhcc.execute-api.us-east-1.amazonaws.com/athena/predict',
+        true,
+      )
       xhr.setRequestHeader('Content-Type', 'application/json')
       xhr.onreadystatechange = () => {
         if (xhr.readyState === XMLHttpRequest.DONE) {
@@ -653,11 +667,15 @@ export default {
         this.$refs.explainTestSample.classList.add('incorrect-prediction')
         this.$refs.explainTestSample.innerHTML = `${currentTestSet.index[modelIdx]} (incorrect prediction)`
       }
+
+      this.$refs.testResultsOverlayText.classList.add('inactive')
     },
 
     hideTestSampleOverlay() {
       this.$refs.testSampleOverlayPanel.classList.remove('active')
+      this.$refs.testResultsOverlayText.classList.remove('inactive')
     },
+
     showCourseText(idx) {
       for (let j = 0; j < this.courseTexts.length; ++j) {
         if (j == idx) {
@@ -875,5 +893,30 @@ export default {
 }
 #explainTestSample.incorrect-prediction {
   color: rgb(95, 0, 0);
+}
+
+#tokenAnimationGif {
+  width: 90%;
+  bottom: 0%;
+  margin-top: 5%;
+}
+
+#outputTokensAnimationGif {
+  width: 90%;
+  bottom: 0%;
+  margin-top: 5%;
+}
+
+@media (max-aspect-ratio: 16/16) {
+  #tokenAnimationsImg {
+    width: 100%;
+    bottom: 0%;
+    margin-top: 5%;
+  }
+  #outputTokensAnimationGif {
+    width: 100%;
+    bottom: 0%;
+    margin-top: 5%;
+  }
 }
 </style>
